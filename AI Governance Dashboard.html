@@ -1,0 +1,425 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>AI Governance Dashboard</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap">
+<style>
+  /* Layout: a short written brief first (who, what, assumptions), then one lean prototype screen, then sources, metrics, risks. */
+  :root {
+    --bg: #F2F5F5;
+    --surface: #FFFFFF;
+    --surface-2: #E8EEEE;
+    --ink: #13262A;
+    --ink-2: #4B6166;
+    --line: #D3DCDD;
+    --accent: #0B6E6E;
+    --accent-soft: #D3EBE8;
+    --on-accent: #FFFFFF;
+    --warn: #945F07;
+    --warn-soft: #F8EBCF;
+    --crit: #B3321F;
+    --crit-soft: #FBE3E0;
+    --font-display: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+    --font-body: 'Public Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-data: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0E1A1D; --surface: #152428; --surface-2: #1B2E33; --ink: #E6EEEF; --ink-2: #9DB2B6;
+      --line: #2A4147; --accent: #4FC1BC; --accent-soft: #17383A; --on-accent: #08201F;
+      --warn: #E3AE55; --warn-soft: #3A2D14; --crit: #F0705F; --crit-soft: #3A1E1B;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0E1A1D; --surface: #152428; --surface-2: #1B2E33; --ink: #E6EEEF; --ink-2: #9DB2B6;
+    --line: #2A4147; --accent: #4FC1BC; --accent-soft: #17383A; --on-accent: #08201F;
+    --warn: #E3AE55; --warn-soft: #3A2D14; --crit: #F0705F; --crit-soft: #3A1E1B;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg); color: var(--ink); font: 15px/1.6 var(--font-body);
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 32px 64px;
+  }
+  .wrap { max-width: 1060px; margin: 0 auto; display: flex; flex-direction: column; gap: 52px; }
+  .section { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+  h1 { font-size: clamp(30px, 5vw, 42px); line-height: 1.1; font-weight: 700; }
+  h2 { font-size: clamp(22px, 3.5vw, 28px); line-height: 1.2; font-weight: 700; }
+  h3 { font-size: 17px; line-height: 1.3; font-weight: 600; }
+  p { margin: 0; max-width: 68ch; }
+  .eyebrow { font: 500 12px/1 var(--font-data); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
+  .lede { color: var(--ink-2); font-size: 16px; }
+  .head { display: flex; flex-direction: column; gap: 10px; }
+  .note { font-size: 12.5px; color: var(--ink-2); max-width: none; }
+  code { font-family: var(--font-data); font-size: 0.9em; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+
+  .block { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+  .block ul, .block ol { margin: 0; padding-left: 1.2em; display: flex; flex-direction: column; gap: 8px; }
+  .block li { max-width: 66ch; }
+  .two-col { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .three-col { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  @media (max-width: 860px) { .three-col { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 760px) { .two-col { grid-template-columns: minmax(0, 1fr); } }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 14px; }
+  th { text-align: left; font: 500 11px/1.4 var(--font-data); letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-2); padding: 10px 14px; background: var(--surface-2); }
+  td { padding: 12px 14px; border-top: 1px solid var(--line); vertical-align: top; line-height: 1.5; }
+  td:first-child { font-weight: 600; width: 20%; }
+  td.ph { font-family: var(--font-data); text-align: center; width: 7%; }
+
+  .pill { display: inline-block; font: 600 10.5px/1 var(--font-body); letter-spacing: 0.05em; text-transform: uppercase; padding: 3px 7px; border-radius: 999px; white-space: nowrap; background: var(--surface-2); color: var(--ink-2); }
+  .pill.crit { background: var(--crit-soft); color: var(--crit); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pill.ok { background: var(--accent-soft); color: var(--accent); }
+  .flag { font: 500 11px/1 var(--font-data); letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 8px; border-radius: 4px; background: var(--accent-soft); color: var(--accent); }
+  .caption { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: 13px; color: var(--ink-2); }
+
+  /* Prototype screen */
+  .screen { background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .screen-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; padding: 12px 20px; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .brand { font-family: var(--font-display); font-weight: 700; font-size: 16px; }
+  .bar-meta { font: 400 12px/1.4 var(--font-data); color: var(--ink-2); }
+  .screen-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+  .strip { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; display: flex; flex-wrap: wrap; gap: 6px 28px; align-items: baseline; }
+  .strip-main { font: 500 30px/1.2 var(--font-data); font-variant-numeric: tabular-nums; color: var(--crit); }
+  .strip-text { font-size: 14px; color: var(--ink-2); max-width: 52ch; }
+  .strip-text b { color: var(--ink); }
+  .alertbar { display: flex; flex-wrap: wrap; gap: 8px 12px; }
+  .alertchip { flex: 1 1 280px; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 10px 14px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); font-size: 13.5px; }
+  .alertchip span.txt { flex: 1 1 200px; min-width: 0; }
+  .btn { font: inherit; font-size: 13px; font-weight: 600; padding: 5px 11px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .grid-a { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 16px; }
+  @media (max-width: 860px) { .grid-a { grid-template-columns: minmax(0, 1fr); } }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .panel-head { display: flex; flex-direction: column; gap: 2px; }
+  .panel-q { font-size: 13px; color: var(--ink-2); }
+  .chart-host { width: 100%; min-width: 0; }
+  .chart-host svg { display: block; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .sw { display: inline-block; width: 18px; height: 0; border-top: 2.5px solid var(--accent); }
+  .sw.dash { border-top-style: dashed; border-top-width: 2px; }
+  .sw.bud { border-top: 2px solid var(--ink-2); }
+  .ax-text { fill: var(--ink-2); font: 400 11px var(--font-data); }
+  .ax-strong { fill: var(--ink); font: 500 11px var(--font-data); }
+  .grid-line { stroke: var(--line); stroke-width: 1; }
+  .s-area { fill: var(--accent-soft); }
+  .s-actual { stroke: var(--accent); stroke-width: 2.5; fill: none; stroke-linejoin: round; }
+  .s-fc { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 6 4; fill: none; }
+  .s-bud { stroke: var(--ink-2); stroke-width: 1.5; }
+  .dot-now { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+  .dot-end { fill: var(--crit); stroke: var(--surface); stroke-width: 2; }
+
+  .rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+  .rows.cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 32px; }
+  @media (max-width: 760px) { .rows.cols { grid-template-columns: minmax(0, 1fr); } }
+  .trow-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; font-size: 13px; }
+  .tname { font-weight: 600; }
+  .tval { display: inline-flex; align-items: center; gap: 8px; font: 400 12px/1.4 var(--font-data); color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  .track { position: relative; height: 10px; background: var(--surface-2); border-radius: 5px; margin-top: 6px; }
+  .fill { height: 100%; border-radius: 5px; background: var(--accent); }
+  .fill.warn { background: var(--warn); }
+  .fill.crit { background: var(--crit); }
+  .limit { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); }
+  .urow { display: grid; grid-template-columns: minmax(0, 9rem) minmax(0, 1fr) 2.6rem; gap: 10px; align-items: center; }
+  .uname { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; font-size: 13px; font-weight: 600; line-height: 1.3; }
+  .ucount { font: 500 13px var(--font-data); text-align: right; font-variant-numeric: tabular-nums; }
+  .utrack { height: 10px; background: var(--surface-2); border-radius: 5px; }
+  @media (max-width: 520px) { .urow { grid-template-columns: minmax(0, 6.5rem) minmax(0, 1fr) 2.4rem; } }
+
+  .later { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; color: var(--ink-2); }
+  .later .tag { padding: 4px 9px; border: 1px dashed var(--line); border-radius: 6px; }
+
+  .chain { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  @media (max-width: 860px) { .chain { grid-template-columns: minmax(0, 1fr); } }
+  .chain .block h3 { font-size: 16px; }
+  .kv { display: grid; grid-template-columns: 6.2rem minmax(0, 1fr); gap: 4px 12px; font-size: 14px; }
+  .kv dt { font: 500 11px/1.9 var(--font-data); letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-2); }
+  .kv dd { margin: 0; }
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <span class="eyebrow">APM take-home</span>
+    <h1>AI Governance Dashboard</h1>
+    <p class="lede">A one-page brief, one prototype screen, and the data plan behind it. All numbers on the screen are made up.</p>
+  </header>
+
+  <!-- FRAMING -->
+  <section class="section" aria-labelledby="f">
+    <div class="head"><span class="eyebrow">Framing</span><h2 id="f">Who this is for and what it must do</h2></div>
+    <div class="two-col">
+      <div class="block">
+        <h3>The problem</h3>
+        <p>Teams buy and use AI tools on their own. Nobody can answer, with confidence, how much the company spends on AI, who is near a budget limit, or which tools are in use that IT never approved.</p>
+      </div>
+      <div class="block">
+        <h3>Primary user</h3>
+        <p>The head of IT or IT operations who owns the AI budget and gets asked "what are we spending on AI?" every month. The CFO is the second reader and gets the same screen as a monthly summary. I picked one primary user so the screen can be simple. This is a bet to validate in interviews.</p>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="block">
+        <h3>Assumptions</h3>
+        <ul>
+          <li>A spend limit is a monthly dollar amount per team, set by finance with the team lead. Per-tool limits come later.</li>
+          <li>Company of 500 to 5,000 people, with a mix of approved tools and tools people found themselves.</li>
+          <li>Version 1 reports and alerts. It does not block anything.</li>
+          <li>Only counts, dates and cost are collected. Prompt and response content never is.</li>
+        </ul>
+      </div>
+      <div class="block">
+        <h3>Not in version 1</h3>
+        <ul>
+          <li>Blocking tools or cutting off spend at a limit.</li>
+          <li>Ranking or naming individual employees.</li>
+          <li>Charging costs back to teams.</li>
+          <li>Judging whether AI use is productive.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- PART 1 -->
+  <section class="section" aria-labelledby="p1">
+    <div class="head"><span class="eyebrow">Part 1</span><h2 id="p1">The screen</h2></div>
+    <p>One headline number, one alert strip, three charts. Each chart is titled with the question it answers. Everything else is deliberately left off (list under the screen).</p>
+    <div class="caption"><span class="flag">Prototype</span><span>Illustrative data for a fictional 1,400-person company. Buttons are not connected.</span></div>
+
+    <div class="screen">
+      <div class="screen-bar">
+        <span class="brand">AI Governance</span>
+        <span class="bar-meta">October 2026, month to date · Synced 20:30 IST</span>
+      </div>
+      <div class="screen-body">
+        <div class="strip">
+          <span class="strip-main">$51.9k</span>
+          <span class="strip-text"><b>Forecast for October, 8% over the $48,000 budget.</b> $36,820 spent so far, 77% of budget with 71% of the month gone. At this pace the budget runs out on Oct 29.</span>
+        </div>
+
+        <div class="alertbar">
+          <div class="alertchip"><span class="pill crit">Over limit</span><span class="txt">Marketing is $900 over its $6,000 limit.</span><button type="button" class="btn">Review</button></div>
+          <div class="alertchip"><span class="pill warn">Near limit</span><span class="txt">Engineering reaches its limit around Oct 24.</span><button type="button" class="btn">Review</button></div>
+        </div>
+
+        <div class="grid-a">
+          <div class="panel">
+            <div class="panel-head"><h3>Spend against budget</h3><span class="panel-q">Will we stay inside budget this month?</span></div>
+            <div id="spend-chart" class="chart-host"></div>
+            <div class="legend">
+              <span><i class="sw"></i>Actual</span>
+              <span><i class="sw dash"></i>Forecast at current pace</span>
+              <span><i class="sw bud"></i>Budget</span>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>Spend against limit, by team</h3><span class="panel-q">Who is close to a limit or past it?</span></div>
+            <ul class="rows" id="team-rows"></ul>
+            <p class="note">The vertical marker on each bar is that team's monthly limit.</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><h3>Active users by tool</h3><span class="panel-q">How much usage sits outside approved tools? 182 of 1,030 active AI users (18%) are on tools that are not approved.</span></div>
+          <ul class="rows cols" id="tool-rows"></ul>
+          <p class="note">A person who uses two tools appears under both. Counts for unapproved tools come from sign-in and network data, so their spend is unknown.</p>
+        </div>
+      </div>
+    </div>
+    <div class="later"><span>Left off the first screen:</span><span class="tag">Spend by tool</span><span class="tag">Drill-down to a person</span><span class="tag">Limit editor</span><span class="tag">Approval workflow</span><span class="tag">Token counts</span></div>
+  </section>
+
+  <!-- PART 3 (chart choice) placed with the screen for the reading order -->
+  <section class="section" aria-labelledby="p3">
+    <div class="head"><span class="eyebrow">Part 3</span><h2 id="p3">Why these three charts</h2></div>
+    <p>I worked backwards: the decision the user needs to make, the question that informs it, the chart that answers it, then the data it needs.</p>
+    <div class="chain">
+      <div class="block">
+        <h3>Spend against budget</h3>
+        <dl class="kv">
+          <dt>Question</dt><dd>Will we stay inside budget?</dd>
+          <dt>Decision</dt><dd>Raise the budget, tighten limits, or do nothing.</dd>
+          <dt>Why a line</dt><dd>A total hides direction. The forecast shows the day the budget is crossed while there is still time to act.</dd>
+          <dt>Data</dt><dd>Vendor cost APIs, budget upload.</dd>
+        </dl>
+      </div>
+      <div class="block">
+        <h3>Spend against limit, by team</h3>
+        <dl class="kv">
+          <dt>Question</dt><dd>Who is near a limit?</dd>
+          <dt>Decision</dt><dd>Raise a limit, ask a team to cut back, or require approval.</dd>
+          <dt>Why bars</dt><dd>Scaling each bar to its own limit makes a $3k team and a $15k team comparable. Sorted by risk, the problem teams are at the top.</dd>
+          <dt>Data</dt><dd>Cost APIs, identity provider for team mapping, limits.</dd>
+        </dl>
+      </div>
+      <div class="block">
+        <h3>Active users by tool</h3>
+        <dl class="kv">
+          <dt>Question</dt><dd>How much use is outside approved tools?</dd>
+          <dt>Decision</dt><dd>Approve it, offer an approved replacement, or block it.</dd>
+          <dt>Why users</dt><dd>Free and personal tools show no spend, so people are the only honest measure of shadow AI.</dd>
+          <dt>Data</dt><dd>Sign-in logs, network data, expense feeds.</dd>
+        </dl>
+      </div>
+    </div>
+    <p class="note">Left off on purpose: a pie of spend by tool (rarely leads to an action), token counts (engineers care, a CFO cannot act on them), and a ranked list of individual users (invites blame and raises privacy concerns).</p>
+  </section>
+
+  <!-- PART 2 -->
+  <section class="section" aria-labelledby="p2">
+    <div class="head"><span class="eyebrow">Part 2</span><h2 id="p2">Where the data comes from</h2></div>
+    <p>No single source covers it all. Vendor APIs give accurate spend for paid tools. The identity provider says who people are and which team they belong to. Network and expense data find the tools nobody reported.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Source</th><th>Gives us</th><th>Examples</th><th>Limits</th><th>Phase</th></tr></thead>
+        <tbody>
+          <tr><td>AI vendor usage and cost APIs</td><td>Cost, seats and usage by workspace, key or user.</td><td>OpenAI, Anthropic, GitHub Copilot, Microsoft 365 Copilot reports.</td><td>Detail varies by vendor, reports lag about a day, and some tools have no API.</td><td class="ph">1</td></tr>
+          <tr><td>Identity provider</td><td>Person, team, manager. Which AI apps they signed in to.</td><td>Okta, Microsoft Entra ID, Google Workspace.</td><td>Sees work sign-ins only, not personal accounts.</td><td class="ph">1</td></tr>
+          <tr><td>Budgets and org data</td><td>Team structure and the budget or limit per team.</td><td>CSV upload first, then HR and finance systems.</td><td>Budgets often live in spreadsheets.</td><td class="ph">1</td></tr>
+          <tr><td>Expense and card feeds</td><td>Subscriptions people bought themselves.</td><td>Ramp, Brex, Expensify.</td><td>Messy merchant names need a mapping list.</td><td class="ph">2</td></tr>
+          <tr><td>Network and browser signals</td><td>Use of AI sites, including free tools.</td><td>Zscaler, Netskope, DNS logs, browser extension.</td><td>Needs a privacy review. Misses home networks.</td><td class="ph">2</td></tr>
+          <tr><td>Cloud billing and LLM gateways</td><td>Spend on models run in the company's own cloud.</td><td>AWS Bedrock, Azure OpenAI, Vertex AI exports.</td><td>Needs tags or one key per team.</td><td class="ph">3</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">Vendor endpoint names and fields change often. Before building I would confirm each one against the vendor's current documentation.</p>
+  </section>
+
+  <!-- SCOPE, METRICS, RISKS -->
+  <section class="section" aria-labelledby="m">
+    <div class="head"><span class="eyebrow">Scoping</span><h2 id="m">MVP, success metrics and risks</h2></div>
+    <div class="three-col">
+      <div class="block">
+        <h3>MVP, then later</h3>
+        <ol>
+          <li><b>MVP:</b> identity provider, usage APIs for the 3 or 4 biggest tools, budget upload. Charts 1 and 2 in full, chart 3 from sign-in data only.</li>
+          <li><b>Next:</b> expense feeds and network discovery, which make chart 3 reliable.</li>
+          <li><b>Later:</b> gateway and cloud billing, then optional enforcement.</li>
+        </ol>
+      </div>
+      <div class="block">
+        <h3>How we would know it works</h3>
+        <ul>
+          <li>Share of AI spend attributed to a team. Proposed target: 90% or more.</li>
+          <li>Limit breaches flagged before they happen, not after month end.</li>
+          <li>Days to spot a new unapproved tool.</li>
+          <li>Finance and IT opening it weekly.</li>
+          <li><b>Check against noise:</b> share of alerts dismissed as not useful.</li>
+        </ul>
+      </div>
+      <div class="block">
+        <h3>Biggest risks</h3>
+        <ul>
+          <li><b>Attribution.</b> Shared API keys hide who spent what. Needs one key per team.</li>
+          <li><b>Coverage.</b> Some tools expose no data, so each figure carries an "exact", "estimated" or "detected only" tag.</li>
+          <li><b>Trust.</b> Employees may see it as surveillance. Show teams by default, keep individuals for admins.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="block">
+        <h3>Where it fits among existing products</h3>
+        <p>SaaS management tools such as Torii, Zylo and Productiv track app spend broadly. Security tools such as Netskope, Zscaler and Microsoft Purview detect AI traffic. Each vendor's admin console shows only its own tool. The gap I would target is one AI-specific view across vendors that ties spend to team limits. I would check each competitor's current AI features before claiming this gap.</p>
+      </div>
+      <div class="block">
+        <h3>What I would ask in week one</h3>
+        <ul>
+          <li>Interview 5 IT leads and 3 finance leads: who owns this today and what do they use?</li>
+          <li>What does "limit" mean in your company, and who sets it?</li>
+          <li>Which three AI tools cost the most, and do they have usage APIs?</li>
+          <li>Would you want alerts only, or the ability to block?</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  function money(n) { return '$' + n.toLocaleString('en-US'); }
+
+  var DAYS = 22, TOTAL = 36820, BUDGET = 48000, YMAX = 56000;
+  var weights = [], i;
+  for (i = 1; i <= DAYS; i++) {
+    var dow = new Date(2026, 9, i).getDay();
+    weights.push(((dow === 0 || dow === 6) ? 0.35 : 1) * (1 + i * 0.012));
+  }
+  var wsum = weights.reduce(function (a, b) { return a + b; }, 0);
+  var cum = [], run = 0;
+  weights.forEach(function (w) { run += w / wsum * TOTAL; cum.push(run); });
+  cum[DAYS - 1] = TOTAL;
+  var FORECAST = TOTAL / DAYS * 31;
+
+  function drawSpend() {
+    var host = document.getElementById('spend-chart');
+    if (!host) return;
+    var W = Math.max(280, host.clientWidth);
+    var H = W < 520 ? 230 : 270;
+    var m = { l: 44, r: 16, t: 20, b: 26 };
+    var iw = W - m.l - m.r, ih = H - m.t - m.b;
+    function X(d) { return m.l + (d - 1) / 30 * iw; }
+    function Y(v) { return m.t + ih - v / YMAX * ih; }
+    var s = '';
+    [0, 14000, 28000, 42000, 56000].forEach(function (v) {
+      s += '<line class="grid-line" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(v) + '" y2="' + Y(v) + '"/>';
+      s += '<text class="ax-text" x="' + (m.l - 8) + '" y="' + (Y(v) + 4) + '" text-anchor="end">' + (v === 0 ? '$0' : '$' + v / 1000 + 'k') + '</text>';
+    });
+    [1, 8, 15, 22, 29].forEach(function (d) {
+      s += '<text class="ax-text" x="' + X(d) + '" y="' + (H - 6) + '" text-anchor="middle">Oct ' + d + '</text>';
+    });
+    var pts = cum.map(function (v, k) { return X(k + 1).toFixed(1) + ' ' + Y(v).toFixed(1); });
+    s += '<path class="s-area" d="M' + X(1).toFixed(1) + ' ' + Y(0) + ' L' + pts.join(' L') + ' L' + X(DAYS).toFixed(1) + ' ' + Y(0) + ' Z"/>';
+    s += '<line class="s-bud" x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + Y(BUDGET) + '" y2="' + Y(BUDGET) + '"/>';
+    s += '<text class="ax-strong" x="' + (m.l + 6) + '" y="' + (Y(BUDGET) - 6) + '">Budget $48.0k</text>';
+    s += '<path class="s-actual" d="M' + pts.join(' L') + '"/>';
+    s += '<path class="s-fc" d="M' + X(DAYS).toFixed(1) + ' ' + Y(TOTAL).toFixed(1) + ' L' + X(31).toFixed(1) + ' ' + Y(FORECAST).toFixed(1) + '"/>';
+    s += '<circle class="dot-now" cx="' + X(DAYS).toFixed(1) + '" cy="' + Y(TOTAL).toFixed(1) + '" r="5"/>';
+    s += '<circle class="dot-end" cx="' + X(31).toFixed(1) + '" cy="' + Y(FORECAST).toFixed(1) + '" r="5"/>';
+    s += '<text class="ax-strong" x="' + (X(DAYS) - 10).toFixed(1) + '" y="' + (Y(TOTAL) - 10).toFixed(1) + '" text-anchor="end">Today $36.8k</text>';
+    s += '<text class="ax-strong" x="' + (W - m.r) + '" y="' + (Y(FORECAST) - 10).toFixed(1) + '" text-anchor="end">Forecast $51.9k</text>';
+    host.innerHTML = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Cumulative AI spend for October 2026. $36,820 through October 22, forecast to reach $51.9 thousand by October 31 against a $48,000 budget.">' + s + '</svg>';
+  }
+  drawSpend();
+  var h1 = document.getElementById('spend-chart');
+  if (h1 && window.ResizeObserver) new ResizeObserver(drawSpend).observe(h1);
+  else window.addEventListener('resize', drawSpend);
+
+  var teams = [
+    ['Marketing', 6900, 6000], ['Design', 2900, 3000], ['Engineering', 14200, 15000],
+    ['Customer Support', 5400, 7500], ['Sales', 4100, 6000],
+    ['Data &amp; Analytics', 1900, 3500], ['Finance', 1420, 4000]
+  ];
+  var SCALE = 125, LIMIT_AT = 100 / SCALE * 100;
+  document.getElementById('team-rows').innerHTML = teams.map(function (t) {
+    var u = Math.round(t[1] / t[2] * 100);
+    var st = u > 100 ? 'crit' : (u >= 90 ? 'warn' : 'ok');
+    var label = st === 'crit' ? 'Over limit' : (st === 'warn' ? 'Near limit' : 'Within limit');
+    var w = Math.min(t[1] / t[2] * 100, SCALE) / SCALE * 100;
+    return '<li><div class="trow-head"><span class="tname">' + t[0] + '</span>' +
+      '<span class="tval">' + money(t[1]) + ' of ' + money(t[2]) + ' · ' + u + '% <span class="pill ' + st + '">' + label + '</span></span></div>' +
+      '<div class="track"><div class="fill ' + (st === 'ok' ? '' : st) + '" style="width:' + w.toFixed(1) + '%"></div>' +
+      '<div class="limit" style="left:' + LIMIT_AT + '%"></div></div></li>';
+  }).join('');
+
+  var tools = [
+    ['ChatGPT Enterprise', 412, 'ok'], ['Claude Team', 268, 'ok'], ['GitHub Copilot', 190, 'ok'],
+    ['Gemini, personal accounts', 96, 'crit'], ['Perplexity Pro', 57, 'crit'], ['Cursor', 46, 'warn'],
+    ['Midjourney', 34, 'ok'], ['DeepSeek web chat', 29, 'crit'], ['Jasper', 22, 'ok']
+  ];
+  var labels = { ok: 'Approved', warn: 'Under review', crit: 'Not approved' };
+  document.getElementById('tool-rows').innerHTML = tools.map(function (t) {
+    return '<li class="urow"><span class="uname">' + t[0] + '<span class="pill ' + t[2] + '">' + labels[t[2]] + '</span></span>' +
+      '<div class="utrack"><div class="fill ' + (t[2] === 'ok' ? '' : t[2]) + '" style="width:' + (t[1] / 412 * 100).toFixed(1) + '%"></div></div>' +
+      '<span class="ucount">' + t[1] + '</span></li>';
+  }).join('');
+})();
+</script>
+
+</body></html>
